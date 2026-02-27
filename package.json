@@ -1,6 +1,6 @@
 {
   "name": "rule-porter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Convert AI IDE rules between Cursor, Claude Code, Copilot, and AGENTS.md",
   "main": "src/cli.js",
   "bin": {

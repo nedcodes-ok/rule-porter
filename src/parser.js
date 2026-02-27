@@ -43,12 +43,32 @@ function discoverCursorRules(dir) {
   if (files.length === 0) return null;
 
   var rules = [];
+  var skipped = [];
   for (var i = 0; i < files.length; i++) {
     var filePath = path.join(rulesDir, files[i]);
-    var content = fs.readFileSync(filePath, 'utf8');
+    var content;
+    try {
+      content = fs.readFileSync(filePath, 'utf8');
+    } catch (e) {
+      skipped.push({ file: files[i], reason: 'unreadable' });
+      continue;
+    }
+
+    // Skip empty files
+    if (!content || !content.trim()) {
+      skipped.push({ file: files[i], reason: 'empty' });
+      continue;
+    }
+
     var fm = parseFrontmatter(content);
     var body = getBody(content);
     var name = path.basename(files[i], '.mdc');
+
+    // Skip files with no usable content (only frontmatter, no body)
+    if (!body && fm.found) {
+      skipped.push({ file: files[i], reason: 'no-body' });
+      continue;
+    }
 
     rules.push({
       name: name,
@@ -61,7 +81,7 @@ function discoverCursorRules(dir) {
     });
   }
 
-  return rules;
+  return { rules: rules, skipped: skipped };
 }
 
 // Detect what source format exists in a directory

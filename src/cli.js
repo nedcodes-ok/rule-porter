@@ -118,10 +118,23 @@ function main() {
   }
 
   // Parse rules
-  var rules = parser.discoverCursorRules(cwd);
-  if (!rules || rules.length === 0) {
+  var discovered = parser.discoverCursorRules(cwd);
+  if (!discovered || (!discovered.rules.length && !discovered.skipped.length)) {
     console.log();
     console.log(RED + 'Error: No .mdc files found in .cursor/rules/' + RESET);
+    console.log('Make sure you\'re in a project root with Cursor rules.');
+    process.exit(1);
+  }
+
+  var rules = discovered.rules;
+  var skipped = discovered.skipped;
+
+  if (rules.length === 0) {
+    console.log();
+    console.log(RED + 'Error: Found ' + skipped.length + ' .mdc file(s) but none had usable content.' + RESET);
+    for (var s = 0; s < skipped.length; s++) {
+      console.log('  ' + DIM + skipped[s].file + ': ' + skipped[s].reason + RESET);
+    }
     process.exit(1);
   }
 
@@ -142,7 +155,12 @@ function main() {
   // Show rules summary
   var globalCount = rules.filter(function(r) { return r.alwaysApply; }).length;
   var conditionalCount = rules.length - globalCount;
-  console.log('  ' + GREEN + globalCount + ' global' + RESET + '  ' + CYAN + conditionalCount + ' conditional' + RESET);
+  console.log('  ' + GREEN + '✓ ' + globalCount + ' global' + RESET + '  ' + CYAN + conditionalCount + ' conditional' + RESET);
+
+  // Show skipped files
+  if (skipped.length > 0) {
+    console.log('  ' + DIM + skipped.length + ' skipped (' + skipped.map(function(s) { return s.file; }).join(', ') + ')' + RESET);
+  }
   console.log();
 
   // Show warnings
@@ -173,6 +191,12 @@ function main() {
     console.log('  ' + GREEN + '✓' + RESET + ' Written to ' + BOLD + path.relative(cwd, outPath) + RESET);
   }
 
+  // Final summary
+  var summaryParts = [rules.length + ' rule' + (rules.length === 1 ? '' : 's') + ' converted'];
+  if (result.warnings.length > 0) summaryParts.push(result.warnings.length + ' warning' + (result.warnings.length === 1 ? '' : 's'));
+  if (skipped.length > 0) summaryParts.push(skipped.length + ' skipped');
+  console.log();
+  console.log('  ' + DIM + summaryParts.join(' · ') + RESET);
   console.log();
 }
 
