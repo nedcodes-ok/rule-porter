@@ -1,0 +1,31 @@
+{
+  "name": "rule-porter",
+  "version": "1.0.0",
+  "description": "Convert AI IDE rules between Cursor, Claude Code, Copilot, and AGENTS.md",
+  "main": "src/cli.js",
+  "bin": {
+    "rule-porter": "src/cli.js"
+  },
+  "keywords": [
+    "cursor",
+    "cursorrules",
+    "claude-code",
+    "copilot",
+    "agents-md",
+    "claude-md",
+    "ai",
+    "ide",
+    "rules",
+    "migration",
+    "converter"
+  ],
+  "author": "nedcodes",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nedcodes-ok/rule-porter.git"
+  },
+  "files": [
+    "src/"
+  ]
+}
