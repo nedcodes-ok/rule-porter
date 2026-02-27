@@ -54,6 +54,11 @@ function convert(rules) {
           rule: cRule.name,
           message: 'Glob pattern "' + cRule.globs + '" noted as comment. CLAUDE.md has no file scoping.'
         });
+      } else {
+        warnings.push({
+          rule: cRule.name,
+          message: 'No glob pattern and not alwaysApply. This was a manual-attach rule in Cursor — review placement.'
+        });
       }
 
       if (cRule.body) {

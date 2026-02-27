@@ -44,9 +44,10 @@ function convert(rules) {
       var cRule = conditionalRules[j];
       var cHeading = cRule.description || cRule.name;
 
+      lines.push('### ' + cHeading);
+      lines.push('');
+
       if (cRule.globs) {
-        lines.push('### ' + cHeading);
-        lines.push('');
         lines.push('*Applies to: `' + cRule.globs + '`*');
         lines.push('');
         warnings.push({
@@ -54,8 +55,10 @@ function convert(rules) {
           message: 'Glob pattern "' + cRule.globs + '" converted to comment. AGENTS.md has no native file scoping.'
         });
       } else {
-        lines.push('### ' + cHeading);
-        lines.push('');
+        warnings.push({
+          rule: cRule.name,
+          message: 'No glob pattern and not alwaysApply. This was a manual-attach rule in Cursor — review placement.'
+        });
       }
 
       if (cRule.body) {

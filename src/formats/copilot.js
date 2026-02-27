@@ -25,13 +25,20 @@ function convert(rules) {
     lines.push('## ' + heading);
     lines.push('');
 
-    if (rule.globs && !rule.alwaysApply) {
-      lines.push('*Originally scoped to: `' + rule.globs + '`*');
-      lines.push('');
-      warnings.push({
-        rule: rule.name,
-        message: 'Glob pattern "' + rule.globs + '" lost. Copilot instructions have no file scoping.'
-      });
+    if (!rule.alwaysApply) {
+      if (rule.globs) {
+        lines.push('*Originally scoped to: `' + rule.globs + '`*');
+        lines.push('');
+        warnings.push({
+          rule: rule.name,
+          message: 'Glob pattern "' + rule.globs + '" lost. Copilot instructions have no file scoping.'
+        });
+      } else {
+        warnings.push({
+          rule: rule.name,
+          message: 'No glob pattern and not alwaysApply. This was a manual-attach rule in Cursor — review placement.'
+        });
+      }
     }
 
     if (rule.body) {

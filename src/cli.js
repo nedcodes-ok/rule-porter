@@ -155,7 +155,11 @@ function main() {
   // Show rules summary
   var globalCount = rules.filter(function(r) { return r.alwaysApply; }).length;
   var conditionalCount = rules.length - globalCount;
+  var noFrontmatterCount = rules.filter(function(r) { return !r.hasFrontmatter; }).length;
   console.log('  ' + GREEN + '✓ ' + globalCount + ' global' + RESET + '  ' + CYAN + conditionalCount + ' conditional' + RESET);
+  if (noFrontmatterCount > 0) {
+    console.log('  ' + DIM + noFrontmatterCount + ' without frontmatter (treated as conditional)' + RESET);
+  }
 
   // Show skipped files
   if (skipped.length > 0) {
