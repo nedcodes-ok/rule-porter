@@ -96,6 +96,9 @@ function detectSource(dir) {
   // Check for legacy .cursorrules
   if (fs.existsSync(path.join(dir, '.cursorrules'))) return 'cursorrules-legacy';
 
+  // Check for Windsurf rules
+  if (fs.existsSync(path.join(dir, '.windsurfrules'))) return 'windsurf';
+
   // Check for AGENTS.md
   if (fs.existsSync(path.join(dir, 'AGENTS.md'))) return 'agents-md';
 

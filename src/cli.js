@@ -17,9 +17,20 @@ var DIM = '\x1b[2m';
 var RESET = '\x1b[0m';
 
 var FORMATS = {
+  'cursor': { label: 'Cursor .mdc', module: './formats/cursor' },
   'agents-md': { label: 'AGENTS.md', module: './formats/agents-md' },
   'claude-md': { label: 'CLAUDE.md', module: './formats/claude-md' },
-  'copilot': { label: 'Copilot Instructions', module: './formats/copilot' }
+  'copilot': { label: 'Copilot Instructions', module: './formats/copilot' },
+  'windsurf': { label: 'Windsurf Rules', module: './formats/windsurf' }
+};
+
+var SOURCES = {
+  'cursor': { label: '.cursor/rules/*.mdc', module: null },
+  'cursorrules-legacy': { label: '.cursorrules', module: './parsers/cursorrules-legacy' },
+  'agents-md': { label: 'AGENTS.md', module: './parsers/agents-md' },
+  'claude-md': { label: 'CLAUDE.md', module: './parsers/claude-md' },
+  'copilot': { label: 'Copilot Instructions', module: './parsers/copilot' },
+  'windsurf': { label: '.windsurfrules', module: './parsers/windsurf' }
 };
 
 function showHelp() {
@@ -30,14 +41,22 @@ function showHelp() {
     YELLOW + 'Usage:' + RESET,
     '  npx rule-porter --to <format>              # Auto-detect source',
     '  npx rule-porter --from cursor --to agents-md',
-    '  npx rule-porter --from cursor --to claude-md',
-    '  npx rule-porter --from cursor --to copilot',
+    '  npx rule-porter --from agents-md --to cursor',
     '',
-    YELLOW + 'Formats:' + RESET,
-    '  cursor       .cursor/rules/*.mdc (source)',
+    YELLOW + 'Source Formats:' + RESET,
+    '  cursor              .cursor/rules/*.mdc',
+    '  cursorrules-legacy  .cursorrules (legacy single file)',
+    '  agents-md           AGENTS.md',
+    '  claude-md           CLAUDE.md',
+    '  copilot             .github/copilot-instructions.md',
+    '  windsurf            .windsurfrules',
+    '',
+    YELLOW + 'Target Formats:' + RESET,
+    '  cursor       .cursor/rules/*.mdc (one file per rule)',
     '  agents-md    AGENTS.md',
     '  claude-md    CLAUDE.md',
     '  copilot      .github/copilot-instructions.md',
+    '  windsurf     .windsurfrules',
     '',
     YELLOW + 'Options:' + RESET,
     '  --from <fmt>    Source format (default: auto-detect)',
@@ -65,6 +84,16 @@ function parseArgs(argv) {
     else if (arg === '--version' || arg === '-v') { args.version = true; }
   }
   return args;
+}
+
+function discoverRules(sourceType, cwd) {
+  if (sourceType === 'cursor') {
+    return parser.discoverCursorRules(cwd);
+  }
+  var sourceConfig = SOURCES[sourceType];
+  if (!sourceConfig || !sourceConfig.module) return null;
+  var sourceParser = require(sourceConfig.module);
+  return sourceParser.discover(cwd);
 }
 
 function main() {
@@ -103,26 +132,32 @@ function main() {
     if (!sourceType) {
       console.log();
       console.log(RED + 'Error: No AI IDE rules found in this directory.' + RESET);
-      console.log('Looked for: .cursor/rules/*.mdc, .cursorrules, AGENTS.md, CLAUDE.md, .github/copilot-instructions.md');
+      console.log('Looked for: .cursor/rules/*.mdc, .cursorrules, .windsurfrules, AGENTS.md, CLAUDE.md, .github/copilot-instructions.md');
       console.log('Run this from your project root, or use --from to specify the source format.');
       process.exit(1);
     }
   }
 
-  // Currently only support Cursor as source
-  if (sourceType !== 'cursor') {
+  // Validate source format
+  if (!SOURCES[sourceType]) {
     console.log();
-    console.log(RED + 'Error: "' + sourceType + '" as source is not yet supported.' + RESET);
-    console.log('Currently supported sources: cursor');
+    console.log(RED + 'Error: Unknown source format "' + sourceType + '".' + RESET);
+    console.log('Available: ' + Object.keys(SOURCES).join(', '));
+    process.exit(1);
+  }
+
+  // Don't convert to same format
+  if (sourceType === args.to) {
+    console.log();
+    console.log(RED + 'Error: Source and target are the same format.' + RESET);
     process.exit(1);
   }
 
   // Parse rules
-  var discovered = parser.discoverCursorRules(cwd);
+  var discovered = discoverRules(sourceType, cwd);
   if (!discovered || (!discovered.rules.length && !discovered.skipped.length)) {
     console.log();
-    console.log(RED + 'Error: No .mdc files found in .cursor/rules/' + RESET);
-    console.log('Make sure you\'re in a project root with Cursor rules.');
+    console.log(RED + 'Error: No rules found for source "' + sourceType + '".' + RESET);
     process.exit(1);
   }
 
@@ -131,7 +166,7 @@ function main() {
 
   if (rules.length === 0) {
     console.log();
-    console.log(RED + 'Error: Found ' + skipped.length + ' .mdc file(s) but none had usable content.' + RESET);
+    console.log(RED + 'Error: Found files but none had usable content.' + RESET);
     for (var s = 0; s < skipped.length; s++) {
       console.log('  ' + DIM + skipped[s].file + ': ' + skipped[s].reason + RESET);
     }
@@ -142,13 +177,13 @@ function main() {
   var format = require(FORMATS[args.to].module);
   var result = format.convert(rules);
 
+  var sourceLabel = SOURCES[sourceType].label;
   var targetLabel = FORMATS[args.to].label;
-  var outPath = args.out || path.join(cwd, result.filename);
 
   console.log();
   console.log(CYAN + BOLD + '  rule-porter' + RESET + ' v' + VERSION);
   console.log();
-  console.log('  ' + BOLD + 'Source:' + RESET + '  .cursor/rules/ (' + rules.length + ' rule' + (rules.length === 1 ? '' : 's') + ')');
+  console.log('  ' + BOLD + 'Source:' + RESET + '  ' + sourceLabel + ' (' + rules.length + ' rule' + (rules.length === 1 ? '' : 's') + ')');
   console.log('  ' + BOLD + 'Target:' + RESET + '  ' + targetLabel);
   console.log();
 
@@ -177,26 +212,53 @@ function main() {
     console.log();
   }
 
-  if (args.dryRun) {
-    console.log('  ' + DIM + '--- dry run preview ---' + RESET);
-    console.log();
-    console.log(result.content);
-    console.log('  ' + DIM + '--- end preview ---' + RESET);
-    console.log();
-    console.log('  ' + YELLOW + 'Dry run — no files written.' + RESET);
-  } else {
-    // Ensure output directory exists
-    var outDir = path.dirname(outPath);
-    if (!fs.existsSync(outDir)) {
-      fs.mkdirSync(outDir, { recursive: true });
+  // Handle multi-file output (cursor format)
+  if (result.multiFile) {
+    if (args.dryRun) {
+      console.log('  ' + DIM + '--- dry run preview ---' + RESET);
+      console.log();
+      for (var f = 0; f < result.files.length; f++) {
+        console.log('  ' + BOLD + '=== ' + result.files[f].name + ' ===' + RESET);
+        console.log(result.files[f].content);
+      }
+      console.log('  ' + DIM + '--- end preview ---' + RESET);
+      console.log();
+      console.log('  ' + YELLOW + 'Dry run — no files written.' + RESET);
+    } else {
+      var outDir = args.out || path.join(cwd, '.cursor', 'rules');
+      if (!fs.existsSync(outDir)) {
+        fs.mkdirSync(outDir, { recursive: true });
+      }
+      for (var mf = 0; mf < result.files.length; mf++) {
+        var filePath = path.join(outDir, result.files[mf].name);
+        fs.writeFileSync(filePath, result.files[mf].content, 'utf8');
+        console.log('  ' + GREEN + '✓' + RESET + ' Written ' + BOLD + path.relative(cwd, filePath) + RESET);
+      }
     }
+  } else {
+    var outPath = args.out || path.join(cwd, result.filename);
 
-    fs.writeFileSync(outPath, result.content, 'utf8');
-    console.log('  ' + GREEN + '✓' + RESET + ' Written to ' + BOLD + path.relative(cwd, outPath) + RESET);
+    if (args.dryRun) {
+      console.log('  ' + DIM + '--- dry run preview ---' + RESET);
+      console.log();
+      console.log(result.content);
+      console.log('  ' + DIM + '--- end preview ---' + RESET);
+      console.log();
+      console.log('  ' + YELLOW + 'Dry run — no files written.' + RESET);
+    } else {
+      var singleOutDir = path.dirname(outPath);
+      if (!fs.existsSync(singleOutDir)) {
+        fs.mkdirSync(singleOutDir, { recursive: true });
+      }
+      fs.writeFileSync(outPath, result.content, 'utf8');
+      console.log('  ' + GREEN + '✓' + RESET + ' Written to ' + BOLD + path.relative(cwd, outPath) + RESET);
+    }
   }
 
   // Final summary
+  var totalFiles = result.multiFile ? result.files.length : 1;
   var summaryParts = [rules.length + ' rule' + (rules.length === 1 ? '' : 's') + ' converted'];
+  if (result.multiFile) summaryParts.push(totalFiles + ' file' + (totalFiles === 1 ? '' : 's') + ' generated');
   if (result.warnings.length > 0) summaryParts.push(result.warnings.length + ' warning' + (result.warnings.length === 1 ? '' : 's'));
   if (skipped.length > 0) summaryParts.push(skipped.length + ' skipped');
   console.log();

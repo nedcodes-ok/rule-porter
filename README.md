@@ -1,6 +1,6 @@
 # rule-porter
 
-Convert AI IDE rules between Cursor, Claude Code, GitHub Copilot, and AGENTS.md. Zero dependencies, runs instantly with `npx`.
+Convert AI IDE rules between Cursor, Claude Code, GitHub Copilot, Windsurf, and AGENTS.md. Bidirectional. Zero dependencies.
 
 ```bash
 npx rule-porter --to agents-md
@@ -8,32 +8,43 @@ npx rule-porter --to agents-md
 
 ## Why?
 
-Cursor uses `.mdc` files with YAML frontmatter, glob patterns, and `alwaysApply` flags. None of the other AI coding tools understand that format. If you're switching between Cursor, Claude Code, and Copilot (or using multiple), you need your rules in each tool's format.
+Your AI coding rules are locked into whatever tool you wrote them for. Cursor uses `.mdc` files with YAML frontmatter and glob patterns. Claude Code uses `CLAUDE.md`. Copilot uses `.github/copilot-instructions.md`. Windsurf uses `.windsurfrules`. None of them understand each other's format.
 
-rule-porter reads your `.cursor/rules/` directory and outputs the equivalent config for your target tool, preserving as much structure as possible and warning you about anything that can't convert cleanly.
+rule-porter converts between all of them, preserving as much structure as possible and warning you about anything that can't convert cleanly.
 
 ## Supported Formats
 
 | Format | As Source | As Target | File |
 |--------|-----------|-----------|------|
-| Cursor | ✅ | Planned | `.cursor/rules/*.mdc` |
-| AGENTS.md | Planned | ✅ | `AGENTS.md` |
-| Claude Code | Planned | ✅ | `CLAUDE.md` |
-| GitHub Copilot | Planned | ✅ | `.github/copilot-instructions.md` |
+| Cursor | ✅ | ✅ | `.cursor/rules/*.mdc` |
+| Cursor (legacy) | ✅ | — | `.cursorrules` |
+| AGENTS.md | ✅ | ✅ | `AGENTS.md` |
+| Claude Code | ✅ | ✅ | `CLAUDE.md` |
+| GitHub Copilot | ✅ | ✅ | `.github/copilot-instructions.md` |
+| Windsurf | ✅ | ✅ | `.windsurfrules` |
 
 ## Usage
 
-Run from your project root (where `.cursor/` lives):
+Run from your project root:
 
 ```bash
-# Convert to AGENTS.md
+# Convert Cursor rules to other formats
 npx rule-porter --to agents-md
-
-# Convert to CLAUDE.md
 npx rule-porter --to claude-md
-
-# Convert to Copilot instructions
 npx rule-porter --to copilot
+npx rule-porter --to windsurf
+
+# Convert OTHER formats to Cursor .mdc rules
+npx rule-porter --from agents-md --to cursor
+npx rule-porter --from claude-md --to cursor
+npx rule-porter --from copilot --to cursor
+npx rule-porter --from windsurf --to cursor
+
+# Migrate legacy .cursorrules to .mdc
+npx rule-porter --from cursorrules-legacy --to cursor
+
+# Convert between any two formats
+npx rule-porter --from agents-md --to claude-md
 
 # Preview without writing files
 npx rule-porter --to agents-md --dry-run
@@ -46,7 +57,7 @@ npx rule-porter --to claude-md --out ./docs/CLAUDE.md
 
 | Flag | Description |
 |------|-------------|
-| `--to <format>` | Target format (required): `agents-md`, `claude-md`, `copilot` |
+| `--to <format>` | Target format (required) |
 | `--from <format>` | Source format (default: auto-detect) |
 | `--out <path>` | Output file path (default: format's standard location) |
 | `--dry-run` | Preview the output without writing any files |
@@ -60,42 +71,21 @@ npx rule-porter --to claude-md --out ./docs/CLAUDE.md
 - Rule body content (markdown, code blocks, everything)
 - Global vs conditional rule separation
 - `alwaysApply` rules become top-level/global sections
+- Glob patterns restored when converting back to Cursor
 
 ### Converted with Warnings
-- **Glob patterns** — Cursor's file-scoping globs (`**/*.ts`, `src/api/**`) have no equivalent in flat markdown formats. rule-porter keeps them as human-readable comments (`*Applies to: \`**/*.ts\`*`) and warns you.
-- **`alwaysApply` flag** — Mapped to document structure (global section vs conditional section) since other formats don't have this concept.
+- **Glob patterns** — flat markdown formats don't support file scoping. rule-porter keeps them as human-readable comments and warns you.
+- **`alwaysApply` flag** — mapped to document structure (global section vs conditional section).
+- **Manual-attach rules** — rules with no globs and not alwaysApply get flagged for review.
 
 ### Skipped
-- Empty `.mdc` files
+- Empty files
 - Files with only frontmatter and no body content
 - Unreadable files (permission errors)
 
-Skipped files are reported in the CLI output so nothing gets lost silently.
+## Example
 
-## Example Output
-
-Given two Cursor rules:
-
-**`.cursor/rules/general.mdc`**
-```
----
-description: General guidelines
-alwaysApply: true
----
-Use conventional commits. Write tests for new features.
-```
-
-**`.cursor/rules/typescript.mdc`**
-```
----
-description: TypeScript standards
-globs: "**/*.ts"
-alwaysApply: false
----
-Use strict TypeScript. No any types.
-```
-
-Running `npx rule-porter --to agents-md` produces:
+Given Cursor rules, `npx rule-porter --to agents-md` produces:
 
 ```markdown
 # AGENTS.md
@@ -117,31 +107,20 @@ Use conventional commits. Write tests for new features.
 Use strict TypeScript. No any types.
 ```
 
-## How It Compares
-
-| Feature | rule-porter | cursor-rules-converter |
-|---------|-------------|----------------------|
-| Install | `npx` (zero install) | `npm install` required |
-| Formats | 3 targets + more planned | AGENTS.md + CLAUDE.md only |
-| Glob handling | Preserved as comments + warnings | Dropped |
-| Edge cases | Skips empty/broken files with report | Crashes |
-| Dependencies | Zero | Has dependencies |
-| Approach | Explicit CLI | Git hook based |
+Converting back: `npx rule-porter --from agents-md --to cursor` produces individual `.mdc` files with frontmatter, globs, and alwaysApply flags restored.
 
 ## Lossy Conversions
 
-Some Cursor features don't have equivalents in other formats. rule-porter handles these honestly:
+Some features don't have equivalents across formats. rule-porter handles these honestly:
 
-- **Glob patterns** become markdown comments. You'll see a warning for each one.
-- **`alwaysApply`** becomes structural (global section vs conditional section). The intent is preserved even though the mechanism differs.
-- **No silent data loss.** Every conversion that isn't 1:1 produces a warning.
+- **Glob patterns** become markdown comments in flat formats. Warning for each one.
+- **`alwaysApply`** becomes structural (section placement). Intent preserved, mechanism differs.
+- **No silent data loss.** Every non-1:1 conversion produces a warning.
 
 ## Roadmap
 
-- [ ] Reverse conversion (AGENTS.md/CLAUDE.md/Copilot → Cursor)
-- [ ] Windsurf format support
 - [ ] Batch conversion (all formats at once)
-- [ ] `.cursorrules` legacy format as source
+- [ ] Config file for custom format mappings
 
 ## License
 
