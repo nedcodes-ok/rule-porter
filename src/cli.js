@@ -264,6 +264,8 @@ function main() {
   console.log();
   console.log('  ' + DIM + summaryParts.join(' · ') + RESET);
   console.log();
+  console.log('  ' + DIM + 'Want to check if your rules are healthy?' + RESET + ' npx cursor-doctor scan');
+  console.log();
 }
 
 main();
