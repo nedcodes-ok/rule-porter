@@ -33,5 +33,9 @@
     "src/",
     "src/parsers/",
     "src/formats/"
-  ]
+  ],
+  "homepage": "https://nedcodes.dev",
+  "bugs": {
+    "url": "https://github.com/nedcodes-ok/rule-porter/issues"
+  }
 }
