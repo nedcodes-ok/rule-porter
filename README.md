@@ -1,5 +1,7 @@
 # rule-porter
 
+[![npm version](https://img.shields.io/npm/v/rule-porter)](https://www.npmjs.com/package/rule-porter) [![npm downloads](https://img.shields.io/npm/dw/rule-porter)](https://www.npmjs.com/package/rule-porter) [![license](https://img.shields.io/npm/l/rule-porter)](https://github.com/nedcodes-ok/rule-porter/blob/main/LICENSE) [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen)](https://github.com/nedcodes-ok/rule-porter/blob/main/CONTRIBUTING.md)
+
 Convert AI IDE rules between Cursor, Claude Code, GitHub Copilot, Windsurf, and AGENTS.md. Bidirectional. Zero dependencies.
 
 ```bash
@@ -119,6 +121,7 @@ Some features don't have equivalents across formats. rule-porter handles these h
 
 ## Related
 
+- **[rule-gen](https://github.com/nedcodes-ok/rule-gen)** — Generate rules from your codebase using Google Gemini. `npx rulegen-ai`
 - **[cursor-doctor](https://github.com/nedcodes-ok/cursor-doctor)** — Diagnose and fix broken Cursor rules. Scans your `.cursor/rules/` for missing frontmatter, invalid globs, conflicts, and more. `npx cursor-doctor scan`
 
 ## Roadmap
