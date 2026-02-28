@@ -18,7 +18,10 @@
     "rules",
     "migration",
     "converter",
-    "windsurf"
+    "windsurf",
+    "migration-tool",
+    "format-converter",
+    "cli-tool"
   ],
   "author": "nedcodes",
   "license": "MIT",
