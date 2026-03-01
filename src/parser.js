@@ -18,6 +18,14 @@ function parseFrontmatter(content) {
     var rawVal = line.slice(colonIdx + 1).trim();
     if (rawVal === 'true') data[key] = true;
     else if (rawVal === 'false') data[key] = false;
+    else if (rawVal.startsWith('[') && rawVal.endsWith(']')) {
+      // Parse JSON array
+      try {
+        data[key] = JSON.parse(rawVal);
+      } catch (e) {
+        data[key] = rawVal; // fallback to string if parse fails
+      }
+    }
     else if (rawVal.startsWith('"') && rawVal.endsWith('"')) data[key] = rawVal.slice(1, -1);
     else data[key] = rawVal;
   }
@@ -32,11 +40,28 @@ function getBody(content) {
 }
 
 // Discover .cursor/rules/ directory and parse all .mdc files
+// Also check for .mdc files in the root of the provided path as fallback
 function discoverCursorRules(dir) {
   var rulesDir = path.join(dir, '.cursor', 'rules');
-  if (!fs.existsSync(rulesDir)) return null;
+  var searchDir = rulesDir;
+  
+  // If .cursor/rules/ doesn't exist, check if dir itself contains .mdc files
+  if (!fs.existsSync(rulesDir)) {
+    if (fs.existsSync(dir)) {
+      var rootFiles = fs.readdirSync(dir).filter(function(f) {
+        return f.endsWith('.mdc');
+      });
+      if (rootFiles.length > 0) {
+        searchDir = dir;
+      } else {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
 
-  var files = fs.readdirSync(rulesDir).filter(function(f) {
+  var files = fs.readdirSync(searchDir).filter(function(f) {
     return f.endsWith('.mdc');
   }).sort();
 
@@ -45,10 +70,10 @@ function discoverCursorRules(dir) {
   var rules = [];
   var skipped = [];
   for (var i = 0; i < files.length; i++) {
-    var filePath = path.join(rulesDir, files[i]);
+    var filePath = path.join(searchDir, files[i]);
     var content;
     try {
-      content = fs.readFileSync(filePath, 'utf8');
+      content = fs.readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
     } catch (e) {
       skipped.push({ file: files[i], reason: 'unreadable' });
       continue;

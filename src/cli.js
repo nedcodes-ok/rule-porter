@@ -18,6 +18,7 @@ var RESET = '\x1b[0m';
 
 var FORMATS = {
   'cursor': { label: 'Cursor .mdc', module: './formats/cursor' },
+  'cursorrules-legacy': { label: '.cursorrules (legacy)', module: './formats/cursorrules-legacy' },
   'agents-md': { label: 'AGENTS.md', module: './formats/agents-md' },
   'claude-md': { label: 'CLAUDE.md', module: './formats/claude-md' },
   'copilot': { label: 'Copilot Instructions', module: './formats/copilot' },
@@ -52,11 +53,12 @@ function showHelp() {
     '  windsurf            .windsurfrules',
     '',
     YELLOW + 'Target Formats:' + RESET,
-    '  cursor       .cursor/rules/*.mdc (one file per rule)',
-    '  agents-md    AGENTS.md',
-    '  claude-md    CLAUDE.md',
-    '  copilot      .github/copilot-instructions.md',
-    '  windsurf     .windsurfrules',
+    '  cursor              .cursor/rules/*.mdc (one file per rule)',
+    '  cursorrules-legacy  .cursorrules (legacy single file)',
+    '  agents-md           AGENTS.md',
+    '  claude-md           CLAUDE.md',
+    '  copilot             .github/copilot-instructions.md',
+    '  windsurf            .windsurfrules',
     '',
     YELLOW + 'Options:' + RESET,
     '  --from <fmt>    Source format (default: auto-detect)',
@@ -226,13 +228,22 @@ function main() {
       console.log('  ' + YELLOW + 'Dry run — no files written.' + RESET);
     } else {
       var outDir = args.out || path.join(cwd, '.cursor', 'rules');
-      if (!fs.existsSync(outDir)) {
-        fs.mkdirSync(outDir, { recursive: true });
-      }
-      for (var mf = 0; mf < result.files.length; mf++) {
-        var filePath = path.join(outDir, result.files[mf].name);
-        fs.writeFileSync(filePath, result.files[mf].content, 'utf8');
-        console.log('  ' + GREEN + '✓' + RESET + ' Written ' + BOLD + path.relative(cwd, filePath) + RESET);
+      try {
+        if (!fs.existsSync(outDir)) {
+          fs.mkdirSync(outDir, { recursive: true });
+        }
+        for (var mf = 0; mf < result.files.length; mf++) {
+          var filePath = path.join(outDir, result.files[mf].name);
+          fs.writeFileSync(filePath, result.files[mf].content, 'utf8');
+          console.log('  ' + GREEN + '✓' + RESET + ' Written ' + BOLD + path.relative(cwd, filePath) + RESET);
+        }
+      } catch (e) {
+        if (e.code === 'EACCES') {
+          console.log();
+          console.log(RED + 'Error: Cannot write to ' + outDir + ': Permission denied' + RESET);
+          process.exit(1);
+        }
+        throw e; // Re-throw other errors
       }
     }
   } else {
@@ -247,11 +258,20 @@ function main() {
       console.log('  ' + YELLOW + 'Dry run — no files written.' + RESET);
     } else {
       var singleOutDir = path.dirname(outPath);
-      if (!fs.existsSync(singleOutDir)) {
-        fs.mkdirSync(singleOutDir, { recursive: true });
+      try {
+        if (!fs.existsSync(singleOutDir)) {
+          fs.mkdirSync(singleOutDir, { recursive: true });
+        }
+        fs.writeFileSync(outPath, result.content, 'utf8');
+        console.log('  ' + GREEN + '✓' + RESET + ' Written to ' + BOLD + path.relative(cwd, outPath) + RESET);
+      } catch (e) {
+        if (e.code === 'EACCES') {
+          console.log();
+          console.log(RED + 'Error: Cannot write to ' + outPath + ': Permission denied' + RESET);
+          process.exit(1);
+        }
+        throw e; // Re-throw other errors
       }
-      fs.writeFileSync(outPath, result.content, 'utf8');
-      console.log('  ' + GREEN + '✓' + RESET + ' Written to ' + BOLD + path.relative(cwd, outPath) + RESET);
     }
   }
 

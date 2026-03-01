@@ -29,7 +29,16 @@ function convert(rules) {
       lines.push('description: ' + rule.description);
     }
     if (rule.globs) {
-      lines.push('globs: "' + rule.globs + '"');
+      // Handle array globs properly (don't double-quote arrays)
+      var globValue = rule.globs;
+      if (Array.isArray(globValue)) {
+        lines.push('globs: ' + JSON.stringify(globValue));
+      } else if (typeof globValue === 'string' && globValue.match(/^\[.*\]$/)) {
+        // Already stringified array - use as is (YAML-compatible)
+        lines.push('globs: ' + globValue);
+      } else {
+        lines.push('globs: "' + globValue + '"');
+      }
     }
     lines.push('alwaysApply: ' + (rule.alwaysApply ? 'true' : 'false'));
     lines.push('---');

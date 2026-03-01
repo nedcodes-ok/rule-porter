@@ -48,11 +48,12 @@ function convert(rules) {
       lines.push('');
 
       if (cRule.globs) {
-        lines.push('*Applies to: `' + cRule.globs + '`*');
+        var globStr = Array.isArray(cRule.globs) ? JSON.stringify(cRule.globs) : cRule.globs;
+        lines.push('*Applies to: `' + globStr + '`*');
         lines.push('');
         warnings.push({
           rule: cRule.name,
-          message: 'Glob pattern "' + cRule.globs + '" converted to comment. AGENTS.md has no native file scoping.'
+          message: 'Glob pattern "' + globStr + '" converted to comment. AGENTS.md has no native file scoping.'
         });
       } else {
         warnings.push({
