@@ -119,12 +119,18 @@ Some features don't have equivalents across formats. rule-porter handles these h
 - **`alwaysApply`** becomes structural (section placement). Intent preserved, mechanism differs.
 - **No silent data loss.** Every non-1:1 conversion produces a warning.
 
-## Related
+## Next Step: Validate Your Converted Rules
 
-Part of the [nedcodes](https://nedcodes.dev) toolkit for Cursor AI developers.
+After converting, check that your rules actually work:
 
-- **[rule-gen](https://github.com/nedcodes-ok/rule-gen)** — Generate rules from your codebase using Google Gemini. `npx rulegen-ai`
-- **[cursor-doctor](https://github.com/nedcodes-ok/cursor-doctor)** — Diagnose and fix broken Cursor rules. Scans your `.cursor/rules/` for missing frontmatter, invalid globs, conflicts, and more. `npx cursor-doctor scan`
+```bash
+npx cursor-doctor scan    # Quick health check
+npx cursor-doctor lint    # Detailed rule-by-rule linting
+```
+
+**[cursor-doctor](https://github.com/nedcodes-ok/cursor-doctor)** catches broken frontmatter, conflicting instructions, vague rules the AI ignores, and 100+ other issues.
+
+Also: **[rule-gen](https://github.com/nedcodes-ok/rule-gen)** generates rules from your codebase using Google Gemini. `npx rulegen-ai`
 
 ## Roadmap
 
