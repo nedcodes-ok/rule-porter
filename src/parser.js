@@ -73,7 +73,7 @@ function discoverCursorRules(dir) {
     var filePath = path.join(searchDir, files[i]);
     var content;
     try {
-      content = fs.readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
+      content = fs.readFileSync(filePath, 'utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
     } catch (e) {
       skipped.push({ file: files[i], reason: 'unreadable' });
       continue;

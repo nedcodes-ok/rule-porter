@@ -14,7 +14,7 @@ function discover(dir) {
 
   var content;
   try {
-    content = fs.readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
+    content = fs.readFileSync(filePath, 'utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
   } catch (e) {
     return null;
   }
