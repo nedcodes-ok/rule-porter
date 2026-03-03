@@ -1,23 +1,43 @@
 # rule-porter
 
-[![npm version](https://img.shields.io/npm/v/rule-porter)](https://www.npmjs.com/package/rule-porter) [![npm downloads](https://img.shields.io/npm/dw/rule-porter)](https://www.npmjs.com/package/rule-porter) [![license](https://img.shields.io/npm/l/rule-porter)](https://github.com/nedcodes-ok/rule-porter/blob/main/LICENSE) [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen)](https://github.com/nedcodes-ok/rule-porter/blob/main/CONTRIBUTING.md)
+[![npm version](https://img.shields.io/npm/v/rule-porter)](https://www.npmjs.com/package/rule-porter) [![npm downloads](https://img.shields.io/npm/dw/rule-porter)](https://www.npmjs.com/package/rule-porter) [![license](https://img.shields.io/npm/l/rule-porter)](https://github.com/nedcodes-ok/rule-porter/blob/main/LICENSE)
 
-Convert AI IDE rules between Cursor, Claude Code, GitHub Copilot, Windsurf, and AGENTS.md. Bidirectional. Zero dependencies.
+**Switch AI editors without rewriting all your rules.**
+
+Convert Cursor rules to Claude Code, GitHub Copilot, Windsurf, or AGENTS.md. And back. Bidirectional. Zero dependencies.
 
 ```bash
 npx rule-porter --to agents-md
 ```
 
-## Why?
+## The problem
 
-Your AI coding rules are locked into whatever tool you wrote them for. Cursor uses `.mdc` files with YAML frontmatter and glob patterns. Claude Code uses `CLAUDE.md`. Copilot uses `.github/copilot-instructions.md`. Windsurf uses `.windsurfrules`. None of them understand each other's format.
+Your rules are locked into one tool's format. Cursor uses `.mdc` files with YAML frontmatter and glob patterns. Claude Code uses `CLAUDE.md`. Copilot uses `.github/copilot-instructions.md`. None of them understand each other.
 
-rule-porter converts between all of them, preserving as much structure as possible and warning you about anything that can't convert cleanly.
+## What you get
 
-## Supported Formats
+```
+$ npx rule-porter --to agents-md
 
-| Format | As Source | As Target | File |
-|--------|-----------|-----------|------|
+Converting 12 Cursor rules → AGENTS.md
+
+  ✓ 9 rules converted cleanly
+  ⚠ 3 rules had glob patterns (preserved as comments)
+
+Written: AGENTS.md
+```
+
+Converting back works too:
+
+```bash
+npx rule-porter --from agents-md --to cursor
+# → 12 individual .mdc files with frontmatter and globs restored
+```
+
+## Supported formats
+
+| Format | Read | Write | File |
+|--------|------|-------|------|
 | Cursor | ✅ | ✅ | `.cursor/rules/*.mdc` |
 | Cursor (legacy) | ✅ | — | `.cursorrules` |
 | AGENTS.md | ✅ | ✅ | `AGENTS.md` |
@@ -25,117 +45,61 @@ rule-porter converts between all of them, preserving as much structure as possib
 | GitHub Copilot | ✅ | ✅ | `.github/copilot-instructions.md` |
 | Windsurf | ✅ | ✅ | `.windsurfrules` |
 
-## Usage
-
-Run from your project root:
+## Common conversions
 
 ```bash
-# Convert Cursor rules to other formats
+# Cursor → other formats
 npx rule-porter --to agents-md
 npx rule-porter --to claude-md
 npx rule-porter --to copilot
 npx rule-porter --to windsurf
 
-# Convert OTHER formats to Cursor .mdc rules
+# Other formats → Cursor
 npx rule-porter --from agents-md --to cursor
 npx rule-porter --from claude-md --to cursor
-npx rule-porter --from copilot --to cursor
-npx rule-porter --from windsurf --to cursor
+
+# Between any two formats
+npx rule-porter --from agents-md --to claude-md
 
 # Migrate legacy .cursorrules to .mdc
 npx rule-porter --from cursorrules-legacy --to cursor
 
-# Convert between any two formats
-npx rule-porter --from agents-md --to claude-md
-
-# Preview without writing files
+# Preview without writing
 npx rule-porter --to agents-md --dry-run
-
-# Custom output path
-npx rule-porter --to claude-md --out ./docs/CLAUDE.md
 ```
 
-### Options
+## What converts cleanly
 
-| Flag | Description |
-|------|-------------|
-| `--to <format>` | Target format (required) |
-| `--from <format>` | Source format (default: auto-detect) |
-| `--out <path>` | Output file path (default: format's standard location) |
-| `--dry-run` | Preview the output without writing any files |
-| `--help` | Show help |
-| `--version` | Show version |
-
-## What Gets Converted
-
-### Preserved
-- Rule names and descriptions
-- Rule body content (markdown, code blocks, everything)
+- Rule names, descriptions, and body content
 - Global vs conditional rule separation
-- `alwaysApply` rules become top-level/global sections
-- Glob patterns restored when converting back to Cursor
+- `alwaysApply` rules become top-level sections
+- Globs are restored when converting back to Cursor
 
-### Converted with Warnings
-- **Glob patterns** — flat markdown formats don't support file scoping. rule-porter keeps them as human-readable comments and warns you.
-- **`alwaysApply` flag** — mapped to document structure (global section vs conditional section).
-- **Manual-attach rules** — rules with no globs and not alwaysApply get flagged for review.
+## What gets flagged
 
-### Skipped
-- Empty files
-- Files with only frontmatter and no body content
-- Unreadable files (permission errors)
-
-## Example
-
-Given Cursor rules, `npx rule-porter --to agents-md` produces:
-
-```markdown
-# AGENTS.md
-
-> Generated by rule-porter from .cursor/rules/
-
-## Global Rules
-
-### General guidelines
-
-Use conventional commits. Write tests for new features.
-
-## Conditional Rules
-
-### TypeScript standards
-
-*Applies to: `**/*.ts`*
-
-Use strict TypeScript. No any types.
-```
-
-Converting back: `npx rule-porter --from agents-md --to cursor` produces individual `.mdc` files with frontmatter, globs, and alwaysApply flags restored.
-
-## Lossy Conversions
-
-Some features don't have equivalents across formats. rule-porter handles these honestly:
-
-- **Glob patterns** become markdown comments in flat formats. Warning for each one.
-- **`alwaysApply`** becomes structural (section placement). Intent preserved, mechanism differs.
+- **Glob patterns** become comments in flat formats (markdown doesn't support file scoping)
+- **Manual-attach rules** (no globs, not alwaysApply) get flagged for review
 - **No silent data loss.** Every non-1:1 conversion produces a warning.
 
-## Next Step: Validate Your Converted Rules
+## Options
 
-After converting, check that your rules actually work:
+```
+--to <format>       Target format (required)
+--from <format>     Source format (default: auto-detect)
+--out <path>        Output file path
+--dry-run           Preview without writing
+```
+
+## Next step: check your converted rules
+
+After converting, make sure they actually work:
 
 ```bash
-npx cursor-doctor scan    # Quick health check
+npx cursor-doctor scan    # Health check with letter grade
 npx cursor-doctor lint    # Detailed rule-by-rule linting
 ```
 
-**[cursor-doctor](https://github.com/nedcodes-ok/cursor-doctor)** catches broken frontmatter, conflicting instructions, vague rules the AI ignores, and 100+ other issues.
-
-Also: **[rule-gen](https://github.com/nedcodes-ok/rule-gen)** generates rules from your codebase using Google Gemini. `npx rulegen-ai`
-
-## Roadmap
-
-- [ ] Batch conversion (all formats at once)
-- [ ] Config file for custom format mappings
+**[cursor-doctor](https://github.com/nedcodes-ok/cursor-doctor)** catches broken frontmatter, conflicting instructions, and 100+ other issues. Also: **[rule-gen](https://github.com/nedcodes-ok/rule-gen)** generates rules from your codebase using AI. `npx rulegen-ai`
 
 ## License
 
