@@ -1,5 +1,8 @@
 # rule-porter
 
+![Cursor Rules](https://img.shields.io/badge/Cursor%20Rules-validated-brightgreen)
+
+
 [![npm version](https://img.shields.io/npm/v/rule-porter)](https://www.npmjs.com/package/rule-porter) [![npm downloads](https://img.shields.io/npm/dw/rule-porter)](https://www.npmjs.com/package/rule-porter) [![license](https://img.shields.io/npm/l/rule-porter)](https://github.com/nedcodes-ok/rule-porter/blob/main/LICENSE)
 
 **Switch AI editors without rewriting all your rules.**
